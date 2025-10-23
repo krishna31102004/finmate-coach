@@ -1,0 +1,26 @@
+{
+  "food_pantry": {
+    "name": "Pitchfork Pantry (ASU Food Pantry)",
+    "description": "Provides free groceries and toiletries to ASU students who are experiencing food insecurity.",
+    "details": "Open Monday and Wednesday 11 am–3 pm, Friday 11 am–3 pm at the Tempe campus. Bring your ASU ID and a reusable bag.",
+    "url": "https://pitchforkpantry.asu.edu"
+  },
+  "transport_pass": {
+    "name": "Valley Metro Student Pass",
+    "description": "Discounted bus and light rail pass for ASU students.",
+    "details": "Purchase through the ASU ID Card Office to get unlimited rides on Valley Metro buses and the light rail.",
+    "url": "https://cfo.asu.edu/transit"
+  },
+  "credit_union": {
+    "name": "Desert Financial Credit Union",
+    "description": "Offers high yield savings and student checking accounts.",
+    "details": "Visit the campus branch on University Drive or apply online. Special rates are available for students.",
+    "url": "https://www.desertfinancial.com"
+  },
+  "free_meals": {
+    "name": "Community Meals Program",
+    "description": "Student Success Center program offering free community meals.",
+    "details": "Check the Student Success Center calendar for upcoming community dinners with free meals and conversation.",
+    "url": "https://students.asu.edu/resources/food"
+  }
+}

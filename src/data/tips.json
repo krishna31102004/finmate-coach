@@ -1,0 +1,9 @@
+[
+  { "id": "tip-food", "tag": "food", "text": "Meal prep to save money." },
+  { "id": "tip-round-up", "tag": "round_up", "text": "Use round‑up savings to grow your emergency fund effortlessly." },
+  { "id": "tip-invest", "tag": "invest", "text": "Start investing with just $10 a week; consistency is key." }
+  ,
+  { "id": "tip-festival", "tag": "festival", "text": "Set aside a small weekly amount for festival expenses." },
+  { "id": "tip-remit", "tag": "remit", "text": "Plan your remittances in advance and use low‑fee services." },
+  { "id": "tip-community", "tag": "community", "text": "Form a saving circle with friends to reach shared goals." }
+]

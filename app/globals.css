@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Additional global styles */
+
+/* Reset body styling to use layout-defined gradients and fonts */
+
+/* Blinking caret animation for typing effect */
+@keyframes blink-caret {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.typing-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background-color: currentColor;
+  margin-left: 2px;
+  animation: blink-caret 1s step-end infinite;
+}
+
+/* Thinking dots animation */
+@keyframes bounce-dot {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-8px); }
+}
+
+.thinking-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: currentColor;
+  margin: 0 2px;
+}
+
+.thinking-dot:nth-child(1) {
+  animation: bounce-dot 1.4s infinite ease-in-out both;
+}
+
+.thinking-dot:nth-child(2) {
+  animation: bounce-dot 1.4s infinite ease-in-out 0.2s both;
+}
+
+.thinking-dot:nth-child(3) {
+  animation: bounce-dot 1.4s infinite ease-in-out 0.4s both;
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .typing-caret {
+    animation: none;
+    opacity: 1;
+  }
+  
+  .thinking-dot {
+    animation: none;
+  }
+}
+
+/* Large text mode */
+body[data-lg="true"] {
+  font-size: 1.125rem;
+}
+
+body[data-lg="true"] .text-sm {
+  font-size: 1rem;
+}
+
+body[data-lg="true"] .text-base {
+  font-size: 1.25rem;
+}
+
+body[data-lg="true"] .text-lg {
+  font-size: 1.5rem;
+}
+
+body[data-lg="true"] .text-xl {
+  font-size: 1.75rem;
+}
+
+body[data-lg="true"] .text-2xl {
+  font-size: 2rem;
+}
+
+body[data-lg="true"] .text-3xl {
+  font-size: 2.5rem;
+}

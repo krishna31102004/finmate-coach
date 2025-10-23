@@ -1,0 +1,4 @@
+[
+  { "id": "goal1", "name": "Emergency Fund", "target": 300, "current": 120 },
+  { "id": "goal2", "name": "Book Fund", "target": 150, "current": 0 }
+]

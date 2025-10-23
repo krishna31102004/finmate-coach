@@ -1,0 +1,38 @@
+[
+  {
+    "id": "lesson-credit",
+    "title": "Credit Card Interest in One Minute",
+    "content": "Paying only the minimum keeps you in debt longer. Try to pay your balance in full to avoid high interest charges."
+  },
+  {
+    "id": "lesson-hysa",
+    "title": "What is a HYSA?",
+    "content": "A High Yield Savings Account (HYSA) offers higher interest rates than traditional savings accounts. They are a great place to park your emergency fund."
+  },
+  {
+    "id": "lesson-budget",
+    "title": "50/30/20 Rule",
+    "content": "Allocate 50% of your income to needs, 30% to wants, and 20% to savings. This guideline helps you balance your spending and saving goals."
+  },
+  {
+    "id": "lesson-invest",
+    "title": "Start Investing with $10 a Week",
+    "content": "Even small, consistent investments grow significantly over time thanks to compound interest. Starting early gives your money more time to grow."
+  }
+  ,
+  {
+    "id": "lesson-festival",
+    "title": "Festival Budgeting",
+    "content": "Plan ahead for celebrations like Diwali, Lunar New Year or Spring Break. Allocate a small savings each week to your festival fund so you can enjoy without overspending."
+  },
+  {
+    "id": "lesson-remit",
+    "title": "Sending Money Home",
+    "content": "If you send remittances to family abroad, set aside a percentage of your income each month. Use low-fee transfer services and schedule transfers right after payday to avoid last-minute stress."
+  },
+  {
+    "id": "lesson-community",
+    "title": "Save with Friends",
+    "content": "Start a saving circle with trusted friends. Each week or month, everyone contributes a set amount. The group can support a member in need or fund shared goals like travel or club events."
+  }
+]

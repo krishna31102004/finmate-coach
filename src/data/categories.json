@@ -1,0 +1,12 @@
+{
+  "coffee shop": "food",
+  "dining hall": "food",
+  "grocery": "food",
+  "bookstore": "education",
+  "rideshare": "transportation",
+  "phone bill": "utilities",
+  "pharmacy": "health",
+  "streaming service": "entertainment",
+  "gym membership": "fitness",
+  "bus pass": "transportation"
+}
