@@ -7,7 +7,7 @@ import GoalCard from '@/components/GoalCard';
 import SuggestionCard from '@/components/SuggestionCard';
 import AlertToast from '@/components/AlertToast';
 import BudgetBar from '@/components/BudgetBar';
-import Donut50_30_20 from '@/components/Donut50_30_20';
+import Donut503020 from '@/components/Donut503020';
 import { motion } from 'framer-motion';
 import { User, Home as HomeIcon, Music, PiggyBank, Moon, Sun, ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
 import { formatCurrency, getDaysRemainingInWeek, getWeeklySpent, getResetDayName, getCurrentWeekKey, computeWeeklySplit, getWeekTransactions, getWeekRange, usd } from '@/lib/budget';
@@ -47,7 +47,21 @@ export default function Dashboard() {
   // Compute 50/30/20 split using the new utility
   const weekTxs = getWeekTransactions(transactions);
   const goalContributions = goals.reduce((sum, g) => sum + g.current, 0);
-  const split = computeWeeklySplit(profile, weekTxs, categoriesMap, goalContributions);
+  const split = computeWeeklySplit(profile, weekTxs, categoriesMap, categoriesTotals, goalContributions);
+  
+  // Handle donut segment clicks
+  const handleDonutSelect = (key: 'needs' | 'wants' | 'savings') => {
+    const targetId = key === 'savings' ? 'goals' : key;
+    const element = document.getElementById(targetId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Brief highlight effect
+      element.classList.add('ring-4', 'ring-blue-400', 'dark:ring-blue-600', 'transition-all', 'duration-300');
+      setTimeout(() => {
+        element.classList.remove('ring-4', 'ring-blue-400', 'dark:ring-blue-600');
+      }, 1500);
+    }
+  };
 
   // Convert category totals into an array for iteration
   const categoryArray = Object.entries(categoriesTotals).map(([name, amount]) => ({ name, amount }));
@@ -114,49 +128,50 @@ export default function Dashboard() {
 
   return (
     <main className="p-4 space-y-6">
-      {/* Hero header with greeting, emoji, and quick actions */}
-      <div className="flex flex-col md:flex-row items-center justify-between p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-white/80 dark:from-blue-900/20 dark:via-blue-900/10 dark:to-gray-800/80 border border-primary/10 dark:border-blue-700/20 shadow-md space-y-4 md:space-y-0">
-        <div className="flex items-center space-x-4">
-          <div className="text-4xl md:text-5xl">🌱</div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-textHeading dark:text-gray-100 mb-1">
-              Hi Krishna!
-            </h1>
-            <p className="text-sm md:text-base text-textBody dark:text-gray-300">
-              {isHydrated && hasAnyData ? `You're doing great — you've saved ${formatCurrency(totalSaved)} this week 🎉` : 'Welcome to FinMate! Load demo data to get started.'}
-            </p>
+      {/* Professional hero header */}
+      <section className="rounded-2xl p-6 bg-gradient-to-r from-[#EEF2FF] to-[#F5F7FF] dark:from-slate-800 dark:to-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-lg">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="text-4xl md:text-5xl">🌱</div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+                Hi Krishna!
+              </h1>
+              <p className="mt-1 text-slate-600 dark:text-slate-300">
+                {isHydrated && hasAnyData ? `You're doing great — you've saved ${formatCurrency(totalSaved)} this week 🎉` : 'Welcome to FinMate! Load demo data to get started.'}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center space-x-3">
-          {/* Large text toggle */}
-          <button
-            onClick={() => setLargeText(!ui.largeText)}
-            className={`p-2 rounded-full bg-white/70 dark:bg-gray-700/70 border border-surface dark:border-gray-600 hover:bg-white dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-400 text-sm font-bold text-textBody dark:text-gray-200 transition-colors ${ui.largeText ? 'ring-2 ring-primary dark:ring-blue-400' : ''}`}
-            aria-label="Toggle large text"
-            aria-pressed={ui.largeText}
-          >
-            A
-          </button>
-          {/* Dark mode toggle */}
-          <button
-            onClick={() => setDarkMode(!ui.darkMode)}
-            className="p-2 rounded-full bg-white/70 dark:bg-gray-700/70 border border-surface dark:border-gray-600 hover:bg-white dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-400 transition-colors"
-            aria-label="Toggle dark mode"
-            aria-pressed={ui.darkMode}
-          >
-            {ui.darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-textHeading dark:text-gray-200" />}
-          </button>
-          {/* Profile dropdown */}
-          <div className="relative">
+          <div className="flex items-center gap-2">
+            {/* Large text toggle - 40px hit area */}
             <button
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="p-2 rounded-full bg-white/70 dark:bg-gray-700/70 border border-surface dark:border-gray-600 hover:bg-white dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-400 transition-colors"
-              aria-label="User menu"
-              aria-expanded={isProfileOpen}
-              aria-haspopup="true"
+              onClick={() => setLargeText(!ui.largeText)}
+              className={`w-10 h-10 flex items-center justify-center rounded-full bg-white/70 dark:bg-gray-700/70 border border-slate-300 dark:border-gray-600 hover:bg-white dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-sm font-bold text-slate-700 dark:text-gray-200 transition-colors ${ui.largeText ? 'ring-2 ring-blue-500 dark:ring-blue-400' : ''}`}
+              aria-label="Toggle large text"
+              aria-pressed={ui.largeText}
             >
-              <User className="w-5 h-5 text-textHeading dark:text-gray-200" />
+              A
             </button>
+            {/* Dark mode toggle - 40px hit area */}
+            <button
+              onClick={() => setDarkMode(!ui.darkMode)}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/70 dark:bg-gray-700/70 border border-slate-300 dark:border-gray-600 hover:bg-white dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
+              aria-label="Toggle dark mode"
+              aria-pressed={ui.darkMode}
+            >
+              {ui.darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-700 dark:text-gray-200" />}
+            </button>
+            {/* Profile dropdown - 40px hit area */}
+            <div className="relative">
+              <button
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/70 dark:bg-gray-700/70 border border-slate-300 dark:border-gray-600 hover:bg-white dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
+                aria-label="User menu"
+                aria-expanded={isProfileOpen}
+                aria-haspopup="true"
+              >
+                <User className="w-5 h-5 text-slate-700 dark:text-gray-200" />
+              </button>
             {isProfileOpen && (
               <>
                 {/* Backdrop */}
@@ -195,6 +210,10 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      </section>
+      
+      {/* Divider */}
+      <div className="h-px bg-slate-200 dark:bg-slate-700" />
 
       {/* Demo Data Banner */}
       {!hasAnyData && (
@@ -312,6 +331,13 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+          {/* Over spending plan note */}
+          {(split.needs.over + split.wants.over > 0) && (
+            <div className="mt-3 text-rose-700 bg-rose-50 border border-rose-200 dark:text-rose-200 dark:bg-rose-900/30 dark:border-rose-800/60 rounded-md px-3 py-2 text-sm inline-flex items-center gap-2">
+              <span className="font-medium">⚠️</span>
+              <span>Over weekly spending plan by {usd.format(split.needs.over + split.wants.over)}</span>
+            </div>
+          )}
         </section>
       )}
 
@@ -336,9 +362,9 @@ export default function Dashboard() {
             </p>
           </div>
           
-          {/* Donut Chart */}
+          {/* Interactive Donut Chart */}
           <div className="p-6 rounded-xl bg-white/80 dark:bg-slate-800/60 border border-surface dark:border-slate-700/60 shadow-md">
-            <Donut50_30_20 split={split} />
+            <Donut503020 split={split} onSelect={handleDonutSelect} />
           </div>
           
           {/* How this is calculated accordion */}
@@ -380,7 +406,7 @@ export default function Dashboard() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Needs card */}
-            <div className="flex flex-col justify-between p-4 bg-white/90 dark:bg-slate-800/80 rounded-xl shadow-md border border-surface dark:border-slate-700/60">
+            <div id="needs" className="flex flex-col justify-between p-4 bg-white/90 dark:bg-slate-800/80 rounded-xl shadow-md border border-surface dark:border-slate-700/60 transition-all duration-300">
               <div className="flex items-center space-x-2 mb-2">
                 <HomeIcon className="w-5 h-5 text-primary dark:text-blue-400" />
                 <h3 className="text-lg font-semibold text-textHeading dark:text-slate-100 tracking-tight">Needs</h3>
@@ -389,6 +415,11 @@ export default function Dashboard() {
               <p className="text-xs text-textBody dark:text-slate-300 mt-2">
                 {usd.format(split.needs.spent)} / {usd.format(split.needs.plan)} ({split.needs.pct}%) · {usd.format(split.needs.left)} left
               </p>
+              {split.needs.over > 0 && (
+                <p className="mt-2 text-xs text-rose-700 bg-rose-50 dark:text-rose-200 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800/60 rounded px-2 py-1 inline-flex items-center gap-1">
+                  Over plan by {usd.format(split.needs.over)}
+                </p>
+              )}
               {/* Needs full alert */}
               {showNeedsAlert && (
                 <div className="mt-3 rounded-lg border bg-rose-50 text-rose-900 border-rose-200 dark:bg-rose-900/20 dark:text-rose-100 dark:border-rose-800/60 px-3 py-2 text-xs flex flex-col gap-2">
@@ -419,7 +450,7 @@ export default function Dashboard() {
               )}
             </div>
             {/* Wants card */}
-            <div className="flex flex-col justify-between p-4 bg-white/90 dark:bg-slate-800/80 rounded-xl shadow-md border border-surface dark:border-slate-700/60">
+            <div id="wants" className="flex flex-col justify-between p-4 bg-white/90 dark:bg-slate-800/80 rounded-xl shadow-md border border-surface dark:border-slate-700/60 transition-all duration-300">
               <div className="flex items-center space-x-2 mb-2">
                 <Music className="w-5 h-5 text-secondary dark:text-purple-400" />
                 <h3 className="text-lg font-semibold text-textHeading dark:text-slate-100 tracking-tight">Wants</h3>
@@ -428,17 +459,27 @@ export default function Dashboard() {
               <p className="text-xs text-textBody dark:text-slate-300 mt-2">
                 {usd.format(split.wants.spent)} / {usd.format(split.wants.plan)} ({split.wants.pct}%) · {usd.format(split.wants.left)} left
               </p>
+              {split.wants.over > 0 && (
+                <p className="mt-2 text-xs text-rose-700 bg-rose-50 dark:text-rose-200 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800/60 rounded px-2 py-1 inline-flex items-center gap-1">
+                  Over plan by {usd.format(split.wants.over)}
+                </p>
+              )}
             </div>
-            {/* Savings card */}
-            <div className="flex flex-col justify-between p-4 bg-white/90 dark:bg-slate-800/80 rounded-xl shadow-md border border-surface dark:border-slate-700/60">
+            {/* Savings card - link to goals */}
+            <div className="flex flex-col justify-between p-4 bg-white/90 dark:bg-slate-800/80 rounded-xl shadow-md border border-surface dark:border-slate-700/60 transition-all duration-300">
               <div className="flex items-center space-x-2 mb-2">
                 <PiggyBank className="w-5 h-5 text-accent dark:text-green-400" />
                 <h3 className="text-lg font-semibold text-textHeading dark:text-slate-100 tracking-tight">Savings</h3>
               </div>
               <BudgetBar label="Savings" spent={split.savings.actual} budget={split.savings.plan} variant="savings" />
               <p className="text-xs text-textBody dark:text-slate-300 mt-2">
-                {usd.format(split.savings.actual)} / {usd.format(split.savings.plan)} · {usd.format(Math.max(0, split.savings.plan - split.savings.actual))} left
+                {usd.format(split.savings.actual)} / {usd.format(split.savings.plan)} ({split.savings.pct}%) · {usd.format(Math.max(0, split.savings.plan - split.savings.actual))} left
               </p>
+              {split.savings.over > 0 && (
+                <p className="mt-2 text-xs text-green-700 bg-green-50 dark:text-green-200 dark:bg-green-900/30 border border-green-200 dark:border-green-800/60 rounded px-2 py-1 inline-flex items-center gap-1">
+                  🎉 Exceeding target by {usd.format(split.savings.over)}!
+                </p>
+              )}
             </div>
           </div>
         </section>
@@ -461,6 +502,12 @@ export default function Dashboard() {
                 {categoryArray.map((cat) => (
                   <CategoryCard key={cat.name} category={cat} />
                 ))}
+                {/* Reconciliation note */}
+                {(split.reconciliation.needsDelta > 0.01 || split.reconciliation.wantsDelta > 0.01) && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 px-2 italic">
+                    Note: Category sums differ from weekly totals by {usd.format(split.reconciliation.needsDelta + split.reconciliation.wantsDelta)}. This will correct after recategorization.
+                  </p>
+                )}
               </div>
             ) : (
               <div className="p-6 rounded-xl bg-gray-50 dark:bg-gray-800 border border-surface dark:border-gray-700 text-center text-sm text-gray-500 dark:text-gray-400">
@@ -468,13 +515,16 @@ export default function Dashboard() {
               </div>
             )}
           </div>
-          <div className="space-y-4">
+          <div id="goals" className="space-y-4 transition-all duration-300">
             <div>
               <h2 className="text-xl md:text-2xl font-semibold text-textHeading dark:text-slate-100 mb-1">
                 Goals
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Your savings targets. Add small amounts often.
+              </p>
+              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mt-1">
+                This week's savings target: {usd.format(split.savingsTarget)}
               </p>
             </div>
             {goals.length > 0 ? (

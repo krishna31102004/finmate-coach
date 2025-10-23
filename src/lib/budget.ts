@@ -4,9 +4,15 @@ export type Split = {
   totalWeeklyMoney: number;
   spendingPlan: number;
   savingsTarget: number;
-  needs: { plan: number; spent: number; left: number; pct: number };
-  wants: { plan: number; spent: number; left: number; pct: number };
-  savings: { plan: number; actual: number };
+  needs: { plan: number; spent: number; left: number; over: number; pct: number };
+  wants: { plan: number; spent: number; left: number; over: number; pct: number };
+  savings: { plan: number; actual: number; over: number; pct: number };
+  reconciliation: {
+    needsCategoriesSum: number;
+    wantsCategoriesSum: number;
+    needsDelta: number;
+    wantsDelta: number;
+  };
 };
 
 // Categories that count as Needs (essential)
@@ -40,6 +46,7 @@ export function computeWeeklySplit(
   profile: Profile,
   weekTransactions: Transaction[],
   categoriesMap: Record<string, string>,
+  categoriesTotals: Record<string, number>,
   goalContributions: number = 0
 ): Split {
   // Source of truth: profile.weeklyPlan or default to $500
@@ -51,7 +58,7 @@ export function computeWeeklySplit(
   const savingsTarget = Math.round(totalWeeklyMoney * 0.2 * 100) / 100;
   const spendingPlan = needsPlan + wantsPlan;
   
-  // Calculate actual spending this week, grouped by needs/wants
+  // Calculate actual spending this week from transactions, grouped by needs/wants
   let needsSpent = 0;
   let wantsSpent = 0;
   
@@ -70,10 +77,33 @@ export function computeWeeklySplit(
   needsSpent = Math.round(needsSpent * 100) / 100;
   wantsSpent = Math.round(wantsSpent * 100) / 100;
   
+  // Calculate reconciliation from categoriesTotals
+  let needsCategoriesSum = 0;
+  let wantsCategoriesSum = 0;
+  
+  Object.entries(categoriesTotals).forEach(([category, amount]) => {
+    if (NEEDS_CATEGORIES.includes(category)) {
+      needsCategoriesSum += amount;
+    } else {
+      wantsCategoriesSum += amount;
+    }
+  });
+  
+  needsCategoriesSum = Math.round(needsCategoriesSum * 100) / 100;
+  wantsCategoriesSum = Math.round(wantsCategoriesSum * 100) / 100;
+  
+  const needsDelta = Math.abs(needsSpent - needsCategoriesSum);
+  const wantsDelta = Math.abs(wantsSpent - wantsCategoriesSum);
+  
   const needsLeft = Math.max(0, needsPlan - needsSpent);
   const wantsLeft = Math.max(0, wantsPlan - wantsSpent);
+  const needsOver = Math.max(0, needsSpent - needsPlan);
+  const wantsOver = Math.max(0, wantsSpent - wantsPlan);
   const needsPct = needsPlan > 0 ? Math.round((needsSpent / needsPlan) * 100) : 0;
   const wantsPct = wantsPlan > 0 ? Math.round((wantsSpent / wantsPlan) * 100) : 0;
+  
+  const savingsOver = Math.max(0, goalContributions - savingsTarget);
+  const savingsPct = savingsTarget > 0 ? Math.round((goalContributions / savingsTarget) * 100) : 0;
   
   return {
     totalWeeklyMoney,
@@ -83,17 +113,27 @@ export function computeWeeklySplit(
       plan: needsPlan,
       spent: needsSpent,
       left: needsLeft,
+      over: needsOver,
       pct: needsPct,
     },
     wants: {
       plan: wantsPlan,
       spent: wantsSpent,
       left: wantsLeft,
+      over: wantsOver,
       pct: wantsPct,
     },
     savings: {
       plan: savingsTarget,
       actual: goalContributions,
+      over: savingsOver,
+      pct: savingsPct,
+    },
+    reconciliation: {
+      needsCategoriesSum,
+      wantsCategoriesSum,
+      needsDelta,
+      wantsDelta,
     },
   };
 }

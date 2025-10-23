@@ -128,32 +128,6 @@ export default function SettingsPage() {
           </select>
         </div>
 
-        {/* Round-ups Toggle */}
-        <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-slate-900/50">
-          <div>
-            <label htmlFor="roundUps" className="text-sm font-medium text-textBody dark:text-slate-300">
-              Enable Round-ups
-            </label>
-            <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-              Automatically round up purchases and save the difference
-            </p>
-          </div>
-          <button
-            id="roundUps"
-            onClick={() => setFormData({ ...formData, roundUpsEnabled: !formData.roundUpsEnabled })}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-400 focus:ring-offset-2 dark:focus:ring-offset-slate-800 ${
-              formData.roundUpsEnabled ? 'bg-primary dark:bg-blue-600' : 'bg-gray-300 dark:bg-slate-600'
-            }`}
-            role="switch"
-            aria-checked={formData.roundUpsEnabled}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                formData.roundUpsEnabled ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
-        </div>
 
         {/* Save Button */}
         <div className="flex items-center space-x-3 pt-4">
