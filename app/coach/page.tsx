@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, Suspense } from 'react';
 import useAppStore from '@/store/useAppStore';
 import ChatBox from '@/components/ChatBox';
 import MessageBubble from '@/components/MessageBubble';
 import { motion } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 
 const QUICK_PROMPTS = [
   "Where did my money go?",
@@ -14,9 +15,11 @@ const QUICK_PROMPTS = [
   "If I invest $10/wk?",
 ];
 
-export default function CoachPage() {
+function CoachContent() {
   const { coach, sendUserMessage, respondDemoOrRule } = useAppStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
+  const [hasPrefilled, setHasPrefilled] = useState(false);
 
   const handleSend = async (text: string) => {
     sendUserMessage(text);
@@ -29,6 +32,17 @@ export default function CoachPage() {
   const handleQuickPrompt = (prompt: string) => {
     handleSend(prompt);
   };
+
+  // Handle prefilled query from URL
+  useEffect(() => {
+    const prefillQuery = searchParams.get('prefill');
+    if (prefillQuery && !hasPrefilled && coach.messages.length === 0) {
+      setHasPrefilled(true);
+      setTimeout(() => {
+        handleSend(prefillQuery);
+      }, 300);
+    }
+  }, [searchParams, hasPrefilled, coach.messages.length]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -105,5 +119,24 @@ export default function CoachPage() {
       {/* Chat Input */}
       <ChatBox onSend={handleSend} disabled={coach.isThinking || coach.isTyping} />
     </main>
+  );
+}
+
+export default function CoachPage() {
+  return (
+    <Suspense fallback={
+      <main className="p-4 space-y-4 max-w-4xl mx-auto">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-textHeading dark:text-gray-100">💬 Coach</h1>
+            <p className="text-sm text-textBody dark:text-gray-300 mt-1">
+              Loading...
+            </p>
+          </div>
+        </div>
+      </main>
+    }>
+      <CoachContent />
+    </Suspense>
   );
 }

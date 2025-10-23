@@ -1,4 +1,19 @@
-import type { Transaction } from '../store/useAppStore';
+import type { Transaction, Profile } from '../store/useAppStore';
+
+export type Split = {
+  totalWeeklyMoney: number;
+  spendingPlan: number;
+  savingsTarget: number;
+  needs: { plan: number; spent: number; left: number; pct: number };
+  wants: { plan: number; spent: number; left: number; pct: number };
+  savings: { plan: number; actual: number };
+};
+
+// Categories that count as Needs (essential)
+const NEEDS_CATEGORIES = ['food', 'utilities', 'transportation', 'health', 'education'];
+
+// Categories that count as Wants (discretionary)
+const WANTS_CATEGORIES = ['entertainment', 'fitness', 'other'];
 
 export function categorizeTransactions(
   transactions: Transaction[],
@@ -19,6 +34,72 @@ export function computeBudgetSummary(categoriesTotals: Record<string, number>) {
     wants: totalSpent * 0.3,
     savings: totalSpent * 0.2,
   };
+}
+
+export function computeWeeklySplit(
+  profile: Profile,
+  weekTransactions: Transaction[],
+  categoriesMap: Record<string, string>,
+  goalContributions: number = 0
+): Split {
+  // Source of truth: profile.weeklyPlan or default to $500
+  const totalWeeklyMoney = profile.weeklyPlan ?? 500;
+  
+  // 50/30/20 split
+  const needsPlan = Math.round(totalWeeklyMoney * 0.5 * 100) / 100;
+  const wantsPlan = Math.round(totalWeeklyMoney * 0.3 * 100) / 100;
+  const savingsTarget = Math.round(totalWeeklyMoney * 0.2 * 100) / 100;
+  const spendingPlan = needsPlan + wantsPlan;
+  
+  // Calculate actual spending this week, grouped by needs/wants
+  let needsSpent = 0;
+  let wantsSpent = 0;
+  
+  weekTransactions.forEach((tx) => {
+    const category = categoriesMap[tx.merchant] ?? 'other';
+    if (NEEDS_CATEGORIES.includes(category)) {
+      needsSpent += tx.amount;
+    } else if (WANTS_CATEGORIES.includes(category)) {
+      wantsSpent += tx.amount;
+    } else {
+      // Unknown category defaults to wants
+      wantsSpent += tx.amount;
+    }
+  });
+  
+  needsSpent = Math.round(needsSpent * 100) / 100;
+  wantsSpent = Math.round(wantsSpent * 100) / 100;
+  
+  const needsLeft = Math.max(0, needsPlan - needsSpent);
+  const wantsLeft = Math.max(0, wantsPlan - wantsSpent);
+  const needsPct = needsPlan > 0 ? Math.round((needsSpent / needsPlan) * 100) : 0;
+  const wantsPct = wantsPlan > 0 ? Math.round((wantsSpent / wantsPlan) * 100) : 0;
+  
+  return {
+    totalWeeklyMoney,
+    spendingPlan,
+    savingsTarget,
+    needs: {
+      plan: needsPlan,
+      spent: needsSpent,
+      left: needsLeft,
+      pct: needsPct,
+    },
+    wants: {
+      plan: wantsPlan,
+      spent: wantsSpent,
+      left: wantsLeft,
+      pct: wantsPct,
+    },
+    savings: {
+      plan: savingsTarget,
+      actual: goalContributions,
+    },
+  };
+}
+
+export function getCategoryType(category: string): 'needs' | 'wants' {
+  return NEEDS_CATEGORIES.includes(category) ? 'needs' : 'wants';
 }
 
 // Get current ISO week start (Monday)
@@ -72,3 +153,16 @@ export function getCurrentWeekKey(date: Date = new Date()): string {
   const weekStart = getWeekStart(date);
   return `${weekStart.getFullYear()}-W${Math.ceil((weekStart.getDate()) / 7)}`;
 }
+
+// Get week date range string
+export function getWeekRange(date: Date = new Date()): string {
+  const weekStart = getWeekStart(date);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  
+  const formatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+  return `${formatter.format(weekStart)} – ${formatter.format(weekEnd)}`;
+}
+
+// Currency formatter
+export const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });

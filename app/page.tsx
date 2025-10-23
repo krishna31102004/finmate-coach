@@ -7,10 +7,12 @@ import GoalCard from '@/components/GoalCard';
 import SuggestionCard from '@/components/SuggestionCard';
 import AlertToast from '@/components/AlertToast';
 import BudgetBar from '@/components/BudgetBar';
+import Donut50_30_20 from '@/components/Donut50_30_20';
 import { motion } from 'framer-motion';
-import { User, Home as HomeIcon, Music, PiggyBank, Moon, Sun, ChevronDown } from 'lucide-react';
-import { formatCurrency, getDaysRemainingInWeek, getWeeklySpent, getResetDayName, getCurrentWeekKey } from '@/lib/budget';
+import { User, Home as HomeIcon, Music, PiggyBank, Moon, Sun, ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
+import { formatCurrency, getDaysRemainingInWeek, getWeeklySpent, getResetDayName, getCurrentWeekKey, computeWeeklySplit, getWeekTransactions, getWeekRange, usd } from '@/lib/budget';
 import { useRouter } from 'next/navigation';
+import categoriesMap from '@/data/categories.json';
 
 export default function Dashboard() {
   const {
@@ -21,6 +23,7 @@ export default function Dashboard() {
     alerts,
     suggestions,
     ui,
+    profile,
     setLargeText,
     setDarkMode,
     loadSeeds,
@@ -31,6 +34,7 @@ export default function Dashboard() {
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isCalcOpen, setIsCalcOpen] = useState(false);
   const router = useRouter();
 
   // Wait for hydration to complete before showing store data
@@ -39,6 +43,11 @@ export default function Dashboard() {
   }, []);
 
   const hasAnyData = isHydrated ? hasData() : false;
+  
+  // Compute 50/30/20 split using the new utility
+  const weekTxs = getWeekTransactions(transactions);
+  const goalContributions = goals.reduce((sum, g) => sum + g.current, 0);
+  const split = computeWeeklySplit(profile, weekTxs, categoriesMap, goalContributions);
 
   // Convert category totals into an array for iteration
   const categoryArray = Object.entries(categoriesTotals).map(([name, amount]) => ({ name, amount }));
@@ -57,18 +66,17 @@ export default function Dashboard() {
     }
   });
 
-  // Calculate wallet snapshot
-  const weeklySpent = getWeeklySpent(transactions);
-  const plannedWeek = budgets.needs + budgets.wants; // Exclude savings from planned spending
-  const leftThisWeek = Math.max(0, plannedWeek - weeklySpent);
+  // Calculate wallet snapshot values
   const daysRemaining = getDaysRemainingInWeek();
-  const safePerDay = daysRemaining > 0 ? leftThisWeek / daysRemaining : 0;
+  const totalSpent = split.needs.spent + split.wants.spent;
+  const spendingLeft = Math.max(0, split.spendingPlan - totalSpent);
+  const safePerDay = daysRemaining > 0 ? spendingLeft / daysRemaining : 0;
   const resetDay = getResetDayName();
+  const weekRange = getWeekRange();
 
   // Check if Needs budget is full
-  const needsPct = budgets.needs > 0 ? Math.min(100, (groupSpent.needs / budgets.needs) * 100) : 0;
   const currentWeekKey = getCurrentWeekKey();
-  const showNeedsAlert = isHydrated && needsPct >= 100 && ui.needsAlertDismissed !== currentWeekKey;
+  const showNeedsAlert = isHydrated && split.needs.pct >= 100 && ui.needsAlertDismissed !== currentWeekKey;
 
   const handleDismissNeedsAlert = () => {
     dismissNeedsAlert(currentWeekKey);
@@ -76,6 +84,11 @@ export default function Dashboard() {
   
   // Compute total saved across all goals for the motivational banner
   const totalSaved = goals.reduce((acc, g) => acc + g.current, 0);
+  
+  const handleExplainDashboard = () => {
+    // @ts-ignore - dynamic query parameter
+    router.push('/coach?prefill=' + encodeURIComponent('Explain how my dashboard numbers add up this week and what I can safely spend.'));
+  };
 
   const handleLoadData = () => {
     loadSeeds();
@@ -230,25 +243,73 @@ export default function Dashboard() {
       {/* Wallet Snapshot */}
       {hasAnyData && (
         <section className="space-y-3">
-          <div>
-            <h2 className="text-lg font-semibold text-textHeading dark:text-slate-200">
-              💰 Wallet Snapshot
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Today's quick summary of your weekly money plan.
-            </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-textHeading dark:text-slate-200">
+                💰 Wallet Snapshot
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Today's quick summary of your weekly money plan.
+              </p>
+            </div>
+            <button
+              onClick={handleExplainDashboard}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
+              aria-label="Explain my dashboard in Coach"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+              Explain my dashboard
+            </button>
           </div>
           <div className="p-6 rounded-2xl bg-gradient-to-br from-indigo-200/30 to-purple-200/20 dark:from-indigo-900/30 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800/50 shadow-lg">
-            <div className="space-y-2">
-              <p className="text-2xl md:text-3xl font-bold text-textHeading dark:text-white">
-                Spent {formatCurrency(weeklySpent)} of {formatCurrency(plannedWeek)} · {formatCurrency(leftThisWeek)} left
-              </p>
-              <p className="text-sm text-textBody dark:text-slate-200">
-                Safe-to-spend per day: <span className="font-semibold text-lg">{formatCurrency(safePerDay)}</span>
-              </p>
-              <p className="text-xs text-gray-500 dark:text-slate-400">
-                Resets {resetDay}
-              </p>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/40 px-2 py-1 rounded-full">
+                Week of {weekRange}
+              </span>
+            </div>
+            <div className="space-y-3">
+              {/* Row 1: Spending Plan */}
+              <div className="flex items-baseline justify-between">
+                <span className="text-sm text-textBody dark:text-slate-200">
+                  Spending plan (Needs + Wants):
+                </span>
+                <span className="text-xl md:text-2xl font-bold text-textHeading dark:text-white">
+                  {usd.format(split.spendingPlan)}
+                </span>
+              </div>
+              
+              {/* Row 2: Savings Target */}
+              <div className="flex items-baseline justify-between">
+                <span className="text-sm text-textBody dark:text-slate-200">
+                  Savings target (20%):
+                </span>
+                <span className="text-xl md:text-2xl font-bold text-textHeading dark:text-white">
+                  {usd.format(split.savingsTarget)}
+                </span>
+              </div>
+              
+              {/* Separator */}
+              <div className="border-t border-indigo-300/40 dark:border-indigo-700/40"></div>
+              
+              {/* Row 3: Total */}
+              <div className="flex items-baseline justify-between">
+                <span className="text-sm font-semibold text-textBody dark:text-slate-200">
+                  Total weekly money:
+                </span>
+                <span className="text-2xl md:text-3xl font-bold text-textHeading dark:text-white">
+                  {usd.format(split.totalWeeklyMoney)}
+                </span>
+              </div>
+              
+              {/* Safe to spend per day */}
+              <div className="pt-2 border-t border-indigo-300/40 dark:border-indigo-700/40">
+                <p className="text-sm text-textBody dark:text-slate-200">
+                  Safe-to-spend per day: <span className="font-semibold text-lg">{usd.format(safePerDay)}</span>
+                </p>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                  Spending plan excludes savings. Savings goes to your goals. Resets {resetDay}.
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -271,21 +332,52 @@ export default function Dashboard() {
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-3">
-              Your budget in three buckets. Aim to keep Needs ≤ 50%.
+              We split your week's money into Needs (50%), Wants (30%), Savings (20%).
             </p>
-            {/* Legend chips */}
-            <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-100">
-                <span className="w-2 h-2 rounded-full bg-blue-500"></span> Needs
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-100">
-                <span className="w-2 h-2 rounded-full bg-teal-400"></span> Wants
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-100">
-                <span className="w-2 h-2 rounded-full bg-green-500"></span> Savings
-              </span>
-            </div>
           </div>
+          
+          {/* Donut Chart */}
+          <div className="p-6 rounded-xl bg-white/80 dark:bg-slate-800/60 border border-surface dark:border-slate-700/60 shadow-md">
+            <Donut50_30_20 split={split} />
+          </div>
+          
+          {/* How this is calculated accordion */}
+          <div className="rounded-xl border border-surface dark:border-slate-700/60 bg-white/80 dark:bg-slate-800/60 overflow-hidden">
+            <button
+              onClick={() => setIsCalcOpen(!isCalcOpen)}
+              className="w-full flex items-center justify-between px-5 py-3 text-left hover:bg-gray-50 dark:hover:bg-slate-700/40 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
+              aria-expanded={isCalcOpen}
+              aria-controls="calculation-details"
+            >
+              <span className="text-sm font-semibold text-textHeading dark:text-slate-100">
+                How this is calculated
+              </span>
+              {isCalcOpen ? (
+                <ChevronUp className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+              )}
+            </button>
+            {isCalcOpen && (
+              <div 
+                id="calculation-details" 
+                className="px-5 py-4 border-t border-surface dark:border-slate-700/60 text-sm text-textBody dark:text-slate-300 space-y-2 bg-gray-50/50 dark:bg-slate-900/30"
+              >
+                <p><strong>Weekly plan (from Settings or default):</strong> {usd.format(split.totalWeeklyMoney)}</p>
+                <p><strong>Needs (50% of {usd.format(split.totalWeeklyMoney)}):</strong> {usd.format(split.needs.plan)}</p>
+                <p><strong>Wants (30% of {usd.format(split.totalWeeklyMoney)}):</strong> {usd.format(split.wants.plan)}</p>
+                <p><strong>Savings (20% of {usd.format(split.totalWeeklyMoney)}):</strong> {usd.format(split.savings.plan)}</p>
+                <p><strong>Spending plan:</strong> {usd.format(split.needs.plan)} + {usd.format(split.wants.plan)} = {usd.format(split.spendingPlan)}</p>
+                <div className="pt-2 mt-2 border-t border-slate-200 dark:border-slate-700">
+                  <p className="font-semibold mb-1">This week's activity:</p>
+                  <p><strong>Needs spent:</strong> {usd.format(split.needs.spent)}</p>
+                  <p><strong>Wants spent:</strong> {usd.format(split.wants.spent)}</p>
+                  <p><strong>Left to spend:</strong> {usd.format(spendingLeft)}</p>
+                </div>
+              </div>
+            )}
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Needs card */}
             <div className="flex flex-col justify-between p-4 bg-white/90 dark:bg-slate-800/80 rounded-xl shadow-md border border-surface dark:border-slate-700/60">
@@ -293,22 +385,35 @@ export default function Dashboard() {
                 <HomeIcon className="w-5 h-5 text-primary dark:text-blue-400" />
                 <h3 className="text-lg font-semibold text-textHeading dark:text-slate-100 tracking-tight">Needs</h3>
               </div>
-              <BudgetBar label="Needs" spent={groupSpent.needs} budget={budgets.needs} variant="needs" />
+              <BudgetBar label="Needs" spent={split.needs.spent} budget={split.needs.plan} variant="needs" />
               <p className="text-xs text-textBody dark:text-slate-300 mt-2">
-                {formatCurrency(groupSpent.needs)} / {formatCurrency(budgets.needs)} · {formatCurrency(Math.max(0, budgets.needs - groupSpent.needs))} left
+                {usd.format(split.needs.spent)} / {usd.format(split.needs.plan)} ({split.needs.pct}%) · {usd.format(split.needs.left)} left
               </p>
               {/* Needs full alert */}
               {showNeedsAlert && (
-                <div className="mt-3 rounded-lg border bg-rose-50 text-rose-900 border-rose-200 dark:bg-rose-900/20 dark:text-rose-100 dark:border-rose-800/60 px-3 py-2 text-xs flex items-start justify-between gap-2">
-                  <span>
-                    Heads up: your <strong>Needs</strong> budget is full. Try holding non-urgent purchases or trimming a utility.
-                  </span>
-                  <button 
-                    onClick={handleDismissNeedsAlert} 
-                    className="opacity-70 hover:opacity-100 text-base leading-none focus:outline-none transition-opacity"
-                    aria-label="Dismiss"
+                <div className="mt-3 rounded-lg border bg-rose-50 text-rose-900 border-rose-200 dark:bg-rose-900/20 dark:text-rose-100 dark:border-rose-800/60 px-3 py-2 text-xs flex flex-col gap-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <span>
+                      Heads up: your <strong>Needs</strong> budget is full. Try holding non-urgent purchases or trimming a utility.
+                    </span>
+                    <button 
+                      onClick={handleDismissNeedsAlert} 
+                      className="opacity-70 hover:opacity-100 text-base leading-none focus:outline-none transition-opacity flex-shrink-0"
+                      aria-label="Dismiss"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsCalcOpen(true);
+                      setTimeout(() => {
+                        document.getElementById('calculation-details')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }, 100);
+                    }}
+                    className="text-rose-700 dark:text-rose-300 underline hover:no-underline text-left focus:outline-none focus:ring-1 focus:ring-rose-400 rounded"
                   >
-                    ×
+                    Learn why →
                   </button>
                 </div>
               )}
@@ -319,9 +424,9 @@ export default function Dashboard() {
                 <Music className="w-5 h-5 text-secondary dark:text-purple-400" />
                 <h3 className="text-lg font-semibold text-textHeading dark:text-slate-100 tracking-tight">Wants</h3>
               </div>
-              <BudgetBar label="Wants" spent={groupSpent.wants} budget={budgets.wants} variant="wants" />
+              <BudgetBar label="Wants" spent={split.wants.spent} budget={split.wants.plan} variant="wants" />
               <p className="text-xs text-textBody dark:text-slate-300 mt-2">
-                {formatCurrency(groupSpent.wants)} / {formatCurrency(budgets.wants)} · {formatCurrency(Math.max(0, budgets.wants - groupSpent.wants))} left
+                {usd.format(split.wants.spent)} / {usd.format(split.wants.plan)} ({split.wants.pct}%) · {usd.format(split.wants.left)} left
               </p>
             </div>
             {/* Savings card */}
@@ -330,9 +435,9 @@ export default function Dashboard() {
                 <PiggyBank className="w-5 h-5 text-accent dark:text-green-400" />
                 <h3 className="text-lg font-semibold text-textHeading dark:text-slate-100 tracking-tight">Savings</h3>
               </div>
-              <BudgetBar label="Savings" spent={groupSpent.savings} budget={budgets.savings} variant="savings" />
+              <BudgetBar label="Savings" spent={split.savings.actual} budget={split.savings.plan} variant="savings" />
               <p className="text-xs text-textBody dark:text-slate-300 mt-2">
-                {formatCurrency(groupSpent.savings)} / {formatCurrency(budgets.savings)} · {formatCurrency(Math.max(0, budgets.savings - groupSpent.savings))} left
+                {usd.format(split.savings.actual)} / {usd.format(split.savings.plan)} · {usd.format(Math.max(0, split.savings.plan - split.savings.actual))} left
               </p>
             </div>
           </div>
